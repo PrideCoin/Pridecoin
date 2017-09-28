@@ -1,0 +1,55 @@
+{
+  "contract_name": "TestOwnable",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "testOnlyOwner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    }
+  ],
+  "unlinked_binary": "60606040525b60008054600160a060020a03191633600160a060020a03161790555b5b610171806100316000396000f300606060405263ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166325e7d9ee81146100535780638da5cb5b1461007a578063f2fde38b146100a9575b600080fd5b341561005e57600080fd5b6100666100ca565b604051901515815260200160405180910390f35b341561008557600080fd5b61008d6100ee565b604051600160a060020a03909116815260200160405180910390f35b34156100b457600080fd5b6100c8600160a060020a03600435166100fd565b005b6000805433600160a060020a039081169116146100e657600080fd5b5060015b5b90565b600054600160a060020a031681565b60005433600160a060020a0390811691161461011857600080fd5b6000805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0383161790555b5b505600a165627a7a72305820090123c89ec5d5c5db9baba51fd1764558fbd72613da51ebcf4cee186d13bfee0029",
+  "networks": {
+    "1506554132174": {
+      "events": {},
+      "links": {},
+      "address": "0x1ffe0efd6d28b349d40dc98ddaad61bcb9311258",
+      "updated_at": 1506554141895
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1506574479682
+}

@@ -1,6 +1,5 @@
-pragma solidity ^0.4.11; 
-
 // (c) 2017 Pridecoin Project. The MIT License
+pragma solidity ^0.4.13; 
 
 contract Ownable {
 

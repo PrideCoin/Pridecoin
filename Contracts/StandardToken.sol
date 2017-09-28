@@ -1,4 +1,6 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.13;
+
+import "./ERC20.sol";
 
 /*
  * Implements ERC 20 Token standard: https://github.com/ethereum/EIPs/issues/20
@@ -11,10 +13,10 @@ contract StandardToken is ERC20 {
     // Token starts if the locked state restricting transfers
     bool public locked;
 
-    // DCORP token balances
+    // token balances
     mapping (address => uint256) balances;
 
-    // DCORP token allowances
+    // token allowances
     mapping (address => mapping (address => uint256)) allowed;
     
 

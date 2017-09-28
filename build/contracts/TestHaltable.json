@@ -1,0 +1,123 @@
+{
+  "contract_name": "TestHaltable",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "allowedInEmergency",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "nothing",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "halt",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "halted",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "unhalt",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "allowedWhenNotHalted",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "test",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    }
+  ],
+  "unlinked_binary": "60606040525b60008054600160a060020a03191633600160a060020a03161790555b5b61036d806100316000396000f300606060405236156100965763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416632b08fcaf811461009b578063448f30a3146100c25780635ed7ca5b146100e95780638da5cb5b146100fe578063b9b8af0b1461012d578063cb3e64fd14610154578063d9a4693814610169578063f2fde38b14610190578063f8a8fd6d146101b1575b600080fd5b34156100a657600080fd5b6100ae6101d8565b604051901515815260200160405180910390f35b34156100cd57600080fd5b6100ae6101f9565b604051901515815260200160405180910390f35b34156100f457600080fd5b6100fc6101ff565b005b341561010957600080fd5b610111610242565b604051600160a060020a03909116815260200160405180910390f35b341561013857600080fd5b6100ae610251565b604051901515815260200160405180910390f35b341561015f57600080fd5b6100fc610261565b005b341561017457600080fd5b6100ae6102b7565b604051901515815260200160405180910390f35b341561019b57600080fd5b6100fc600160a060020a03600435166102d7565b005b34156101bc57600080fd5b6100ae61031f565b604051901515815260200160405180910390f35b6000805460a060020a900460ff1615156101f157600080fd5b5060015b5b90565b60015b90565b60005433600160a060020a0390811691161461021a57600080fd5b6000805474ff0000000000000000000000000000000000000000191660a060020a1790555b5b565b600054600160a060020a031681565b60005460a060020a900460ff1681565b60005433600160a060020a0390811691161461027c57600080fd5b60005460a060020a900460ff16151561029457600080fd5b6000805474ff0000000000000000000000000000000000000000191690555b5b5b565b6000805460a060020a900460ff16156101f157600080fd5b5060015b5b90565b60005433600160a060020a039081169116146102f257600080fd5b6000805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0383161790555b5b50565b6000547501000000000000000000000000000000000000000000900460ff16815600a165627a7a723058202846e62afe679d06cab941696dd282f87ae6e847e86f319acf62977b121912e30029",
+  "networks": {
+    "1506554132174": {
+      "events": {},
+      "links": {},
+      "address": "0x03adb6ce3520189191e5f304da04ed3c0d4fb58b",
+      "updated_at": 1506554141895
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1506574478921
+}

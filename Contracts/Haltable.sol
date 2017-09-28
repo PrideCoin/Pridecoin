@@ -1,4 +1,6 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.13;
+
+import "./Ownable.sol";
 
 /*
  * Haltable
@@ -23,12 +25,12 @@ contract Haltable is Ownable {
   }
 
   // called by the owner on emergency, triggers stopped state
-  function halt() external onlyOwner {
+  function halt() public onlyOwner {
     halted = true;
   }
 
   // called by the owner on end of emergency, returns to normal state
-  function unhalt() external onlyOwner onlyInEmergency {
+  function unhalt() public onlyOwner onlyInEmergency {
     halted = false;
   }
 

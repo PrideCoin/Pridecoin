@@ -1,13 +1,22 @@
- pragma solidity ^0.4.11;
-
 // (c) 2017 Pridecoin Project. The MIT License
+pragma solidity ^0.4.13;
  
+import "./Ownable.sol";
+import "./Haltable.sol";
+import "./Mortal.sol";
+import "./Token.sol";
+
 contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
 {
+	struct TokenReceiver {
+		address receiverAddress;
+		uint256 percentage;
+	}
+
     // Crowdsale details
-    uint256 public preICOMaxAmount = 5000;
-    uint256 public ICOMinAmountRaised = 2500;
-    uint256 public ICOMaxAmountRaised = 330000;
+    uint256 public preICOMaxAmount = 5000 ether;
+    uint256 public ICOMinAmountRaised = 2500 ether;
+    uint256 public ICOMaxAmountRaised = 330000 ether;
     uint256 public minAcceptedAmountPreICO = 0.5 ether;
     uint256 public minAcceptedAmountICO = 0.01 ether;
 
@@ -35,6 +44,8 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
     uint256 public Bronze1PhaseEnd = 57 days;
     uint256 public Bronze2PhaseEnd = 62 days;
     uint256 public Bronze3PhaseEnd = 67 days;
+    
+    uint256 public preICOBonusCounter = 0;
 
     enum Stage {
         Waiting,
@@ -52,16 +63,20 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
     }
 
     // Crowdsale state variables
+    uint256 public publicSupply;
     uint256 public raisedPreICO;
     uint256 public raisedICO;
+    bool public bugHuntersReceivedTokens;
+    bool public promotersReceivedTokens;
+    bool public devTeamReceivedTokens;
 
     // token contract interface
     Token public tokenSold;
 
     // Invested balances
     mapping (address => uint256) balances;
-    address[] bugHunters;
-    address[] promoters;
+    TokenReceiver[] bugHunters;
+    TokenReceiver[] promoters;
     address[] devTeam;
 
 
@@ -80,7 +95,7 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
      * @return The current contract Stage
      */
     function getStage() public constant returns (Stage) {
-    
+
         if (now < preICOStart) return Stage.Waiting;
         
         var interICOWaitingPeriodStart = preICOStart + preICOEnd;
@@ -96,7 +111,7 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
         var Bronze3End = preICOStart + Bronze3PhaseEnd;
         
         if (now >= preICOStart && now < interICOWaitingPeriodStart && raisedPreICO < preICOMaxAmount) return Stage.PreICO;
-        if ((now >= interICOWaitingPeriodStart && now < Gold1Start) || raisedPreICO >= preICOMaxAmount) return Stage.Waiting; // waiting for ICO start
+        if ((now >= interICOWaitingPeriodStart && now < Gold1Start) || (now >= preICOStart && now < interICOWaitingPeriodStart && raisedPreICO >= preICOMaxAmount)) return Stage.Waiting; // waiting for ICO start
         if (raisedICO < ICOMaxAmountRaised)
         {
             if (now >= Gold1Start && now < Gold2Start) return Stage.Gold1;
@@ -112,6 +127,18 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
         if ((now >= Bronze3End) || raisedICO >= ICOMaxAmountRaised) return Stage.Ended;
     }
     
+    /*
+     * Get the amount of eth raised during the main ICO phases
+     *
+     * @return The amount
+     */
+    function getRaisedAmount() constant returns(uint256) {
+		var stage = getStage();
+		if (stage == Stage.Waiting || stage == Stage.PreICO)
+			return raisedPreICO;
+		else 
+			return raisedICO;
+    }
 
     /*
      * Get balance of `_investor` 
@@ -128,18 +155,20 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
      * Add a bug hunter's address to the list
      * 
      * @param _hunter The address of the bug hunter (used for token distribution)
+     * @param _percentage The promoter's percentage
      */
-    function addBugHunter(address _hunter) onlyOwner {
-        bugHunters.push(_hunter);
+    function addBugHunter(address _hunter, uint256 percentage) onlyOwner {
+        bugHunters.push(TokenReceiver(_hunter, percentage));
     }
     
     /*
-     * Add a dev team member's address to the list
+     * Add a promoter's address to the list
      * 
      * @param _promoter The promoter's address (used for token distribution)
+     * @param _percentage The promoter's percentage
      */
-    function addPromoter(address _promoter) onlyOwner {
-        promoters.push(_promoter);
+    function addPromoter(address _promoter, uint256 percentage) onlyOwner {
+        promoters.push(TokenReceiver(_promoter, percentage));
     }
     
     /*
@@ -151,6 +180,75 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
         devTeam.push(_member);
     }
     
+    /*
+     * Set a bug hunter's token percentage
+     * 
+     * @param _hunter The address of the bug hunter (used for token distribution)
+     * @param _percentage The promoter's percentage
+     */
+    function setBugHunterPercentage(address _hunter, uint256 _percentage) onlyOwner returns(bool){
+		for(uint256 i = 0; i < bugHunters.length; i++)
+			if(bugHunters[i].receiverAddress == _hunter) {
+				bugHunters[i].percentage = _percentage;
+				return true;
+			}
+				
+		return false;
+    }
+    
+    /*
+     * Set a promoter's token percentage
+     * 
+     * @param _promoter The promoter's address (used for token distribution)
+     * @param _percentage The promoter's percentage
+     */
+    function setPromoterPercentage(address _promoter, uint256 _percentage) onlyOwner returns(bool){
+		for(uint256 i = 0; i < promoters.length; i++)
+			if(promoters[i].receiverAddress == _promoter) {
+				promoters[i].percentage = _percentage;
+				return true;
+			}
+				
+		return false;
+    }
+    
+    /*
+     * Get a bug hunter's token percentage
+     * 
+     * @param _hunter The address of the bug hunter (used for token distribution)
+     * @return The promoter's percentage
+     */
+    function getBugHunterPercentage(address _hunter) onlyOwner constant returns(uint256){
+		for(uint256 i = 0; i < bugHunters.length; i++)
+			if(bugHunters[i].receiverAddress == _hunter) {
+				return bugHunters[i].percentage;
+			}
+				
+		require(false);
+    }
+    
+    /*
+     * Get a promoter's token percentage
+     * 
+     * @param _promoter The promoter's address (used for token distribution)
+     * @return The promoter's percentage
+     */
+    function getPromoterPercentage(address _promoter) onlyOwner constant returns(uint256){
+		for(uint256 i = 0; i < promoters.length; i++)
+			if(promoters[i].receiverAddress == _promoter) {
+				return promoters[i].percentage;
+			}
+				
+		require(false);
+    }
+    
+    /* Set the minimum amount for the ICO
+	 *
+	 * @param _ICOMinAmountRaised The new minimum amount of raised funds for the ICO to be succesful
+	 */
+    function setICOMinAmountRaised(uint256 _ICOMinAmountRaised) onlyOwner atStage(Stage.Waiting) {
+		ICOMinAmountRaised = _ICOMinAmountRaised;
+    }
 
     /*
      * Construct
@@ -163,6 +261,7 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
         tokenSold = Token(_tokenAddress);
         preICOStart = _preICOStart;
         ICOStartAfterDays = _ICOStartAfterDays;
+        preICOBonusCounter = 0;
     }
 
     /*
@@ -170,7 +269,8 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
      *
      *@param _preICOStart The unix timestamp when the preICO starts
      */
-     function SetPreICOStart(uint256 _preICOStart) onlyOwner{
+     function SetPreICOStart(uint256 _preICOStart) onlyOwner atStage(Stage.Waiting){
+		require(now < preICOStart && _preICOStart >= now + 36000); // should only be allowd if the preICO hasn't occured and the change should be at least an hour into the future
         preICOStart = _preICOStart;
      }
      
@@ -179,8 +279,19 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
      *
      *@param _ICOStartAfterDays The days (in seconds) after which the ICO starts
      */
-     function SetICOStart(uint256 _ICOStartAfterDays) onlyOwner{
+     function SetICOStart(uint256 _ICOStartAfterDays) onlyOwner atStage(Stage.Waiting){
+		require(_ICOStartAfterDays >= preICOEnd);
         ICOStartAfterDays = _ICOStartAfterDays;
+        // adjust other stuff
+		Gold1PhaseEnd = ICOStartAfterDays + 5 days;
+		Gold2PhaseEnd = Gold1PhaseEnd + 5 days;
+		Gold3PhaseEnd = Gold2PhaseEnd + 5 days;
+		Silver1PhaseEnd = Gold3PhaseEnd + 5 days;
+		Silver2PhaseEnd = Silver1PhaseEnd + 5 days;
+		Silver3PhaseEnd = Silver2PhaseEnd + 5 days;
+		Bronze1PhaseEnd = Silver3PhaseEnd + 5 days;
+		Bronze2PhaseEnd = Bronze1PhaseEnd + 5 days;
+		Bronze3PhaseEnd = Bronze2PhaseEnd + 5 days;
      }
      
     
@@ -200,6 +311,9 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
 
         if (stage == Stage.PreICO) {
             rate = ratePreICO;
+            if (stage == Stage.PreICO && preICOBonusCounter < 99)
+				rate += 500;
+				
         } else if (stage == Stage.Gold1) {
            rate = rateGold1;
         } else if (stage == Stage.Gold2) {
@@ -229,7 +343,7 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
         else if (eth >= 200)
             rate = rate * 25;
         
-        return _wei * rate / 1 ether; 
+        return _wei * rate * 10 ** 8 / 1 ether; 
     }
 
 
@@ -238,43 +352,81 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
      */
     function withdraw() onlyOwner stopInEmergency {
         // can widthdraw during preICO and before ICO, but not during the ICO itself
-        require(!isICOInProgress() && raisedICO >= ICOMinAmountRaised);
-
-        require(tokenSold.unlock());
+        var stage = getStage();
+        if (stage == Stage.Ended) 
+        {
+			require(tokenSold.unlock());
+			
+			publicSupply = tokenSold.totalSupply();
+			if (raisedICO < ICOMinAmountRaised) // if we didn't meet the require amount, we cannot withdraw the money
+				return;
+		}
+			
+        require(!isICOInProgress()); // not allowed during the ICO
         require(owner.send(this.balance));
-        
-        // distribute token to the elligible groups
-        uint256 publicSupply = tokenSold.totalSupply(); // 75% for the public
-        uint256 wholeSupply = (publicSupply * 100) / 75;
+    }
+    
+    function transferTokenOwnership() onlyOwner {
+		if(tokenSold.getOwner() != owner)
+			tokenSold.transferOwnership(owner);
+    }
+    
+    function distributeTokenToBugHunters() onlyOwner{
+		require(!bugHuntersReceivedTokens && publicSupply > 0);
+		uint256 wholeSupply = (publicSupply * 100) / 75;
         uint256 bugHunterSupply = 5 * wholeSupply / 10 ** 2;
-        uint256 promoterSupply = 5 * wholeSupply / 10 ** 2;
-        uint256 devTeamSupplly = 15 * wholeSupply / 10 ** 2;
         
         if (bugHunters.length > 0)
         {
-            var bugHunterTokenSlice = bugHunterSupply / bugHunters.length;
-            for (uint256 i = 0; i < bugHunters.length; i++) {
-                tokenSold.issue(bugHunters[i], bugHunterTokenSlice);
+			uint256 bugHunterPercentages = 0;
+			for (uint256 j = 0; j < bugHunters.length; j++) {
+                bugHunterPercentages += bugHunters[j].percentage;
             }
+            
+            require(bugHunterPercentages <= 100);
+            for (uint256 i = 0; i < bugHunters.length; i++) {
+                tokenSold.issue(bugHunters[i].receiverAddress, (bugHunterSupply * bugHunters[i].percentage) / 100);
+            }
+            
+            bugHuntersReceivedTokens = true;
         }
-        
+    }
+    
+    function distributeTokenToPromoters() onlyOwner {
+		require(!promotersReceivedTokens && publicSupply > 0);
+        uint256 wholeSupply = (publicSupply * 100) / 75;
+        uint256 promoterSupply = 5 * wholeSupply / 10 ** 2;    
         
         if (promoters.length > 0)
         {
-            var promoterTokenSlice = promoterSupply / promoters.length;
-            for (uint256 j = 0; j < promoters.length; j++) {
-                tokenSold.issue(promoters[j], promoterTokenSlice);
+			uint256 promoterPercentages = 0;
+			for (uint256 i = 0; i < promoters.length; i++) {
+                promoterPercentages += promoters[i].percentage;
             }
+            
+            require(promoterPercentages <= 100);
+            for (uint256 j = 0; j < promoters.length; j++) {
+                tokenSold.issue(promoters[j].receiverAddress, (promoterSupply * promoters[j].percentage) / 100);
+            }
+            
+            promotersReceivedTokens = true;
         }
+     }
+     
+     function distributeTokenToDevTeam() onlyOwner {
+		require(!devTeamReceivedTokens && publicSupply > 0);
+        uint256 wholeSupply = (publicSupply * 100) / 75;
+        uint256 devTeamSupply = 15 * wholeSupply / 10 ** 2;     
         
         if (devTeam.length > 0)
         {
-            var devTeamTokenSlice = devTeamSupplly / devTeam.length;
+            uint256 devTeamTokenSlice = devTeamSupply / devTeam.length;
             for (uint256 k = 0; k < devTeam.length; k++) {
                 tokenSold.issue(devTeam[k], devTeamTokenSlice);
             }
+            devTeamReceivedTokens = true;
         }
-    }
+     }
 
     /*
      * Refund in the case of an unsuccessful crowdsale. The 
@@ -307,24 +459,25 @@ contract PrideCoinCrowdsale is Ownable, Haltable, Mortal
      */
     function () payable stopInEmergency{
         var stage = getStage();
-        //require(stage != Stage.Ended); we need to discuss this // don't allow any donations after the ICO is over
+        require(stage != Stage.Ended && stage != Stage.Waiting); // don't allow any contributions before the ICO has begun or after the ICO is over	
         
         // Enforce min amount
-        if ((stage == Stage.PreICO && msg.value >= minAcceptedAmountPreICO) || (isICOInProgress() && msg.value >= minAcceptedAmountICO))
-        {
+		uint256 received = msg.value;        
+		uint256 valueInToken = toToken(msg.value);
 
-            uint256 received = msg.value;        
-            uint256 valueInToken = toToken(msg.value);
-
-            require (tokenSold.issue(msg.sender, valueInToken));
-
-            // Add the amount of ethereum donated to a user balance for a possible future refund
-            if (isICOInProgress()) {
-                balances[msg.sender] += received; 
-                raisedICO += received;
-            }
-            else if (stage == Stage.PreICO)
-                raisedPreICO += received;
-        }
+		// Add the amount of ethereum donated to a user balance for a possible future refund
+		if (isICOInProgress() && msg.value >= minAcceptedAmountICO) {
+			balances[msg.sender] += received; 
+			raisedICO += received;
+			tokenSold.issue(msg.sender, valueInToken); // require
+		}
+		else if (stage == Stage.PreICO) {
+			if (preICOBonusCounter < 99)
+				preICOBonusCounter++;
+				
+			require(msg.value >= minAcceptedAmountPreICO);
+			raisedPreICO += received;
+			tokenSold.issue(msg.sender, valueInToken); // require
+		}
     }
 }
